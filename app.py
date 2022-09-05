@@ -2,14 +2,14 @@ import mediapipe as mp
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
-import uuid
 import os
+import time
 
 # Initialises the mediapipe classes
 mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 
-jointList = [[8, 7, 6], [12, 11, 10], [4, 3, 2], [1, 0, 5]]
+jointList = [[8, 7, 6], [12, 11, 10], [4, 3, 2]]
 
 def getLabel(index, hand, results):
     output = None
