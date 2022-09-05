@@ -7,8 +7,12 @@ import os
 import time
 
 from sklearn.model_selection import train_test_split
+# from sklearn.cross_validation import train_test_split
 import keras.api._v2.keras as keras
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.callbacks import TensorBoard
 
 # Constants
 t = 2
@@ -31,7 +35,6 @@ no_sequences = 30
 sequence_length = 30
 
 # 1 folder for each sequence
-
 for action in actions:
     for sequence in range(no_sequences):
         try:
@@ -79,17 +82,51 @@ def extractKeypoints(results):
 
     return np.concatenate([pose, face, lh, rh])
 
-cap = cv2.VideoCapture(0)
+labelMap = {label:num for num, label in enumerate(actions)}
+sequences, labels = [], []
+for action in actions:
+    for sequence in range(no_sequences):
+        window = []
+        for frame_num in range(sequence_length):
+            res = np.load(os.path.join(DATA_PATH, action, str(sequence), "{}.npy".format(frame_num)))
+            window.append(res)
+        sequences.append(window)
+        labels.append(labelMap[action])
 
-with mp_holistic.Holistic(min_detection_confidence = 0.8, min_tracking_confidence = 0.8) as holistic:
-    while cap.isOpened():
-        ret, frame = cap.read()
-        frame = cv2.flip(frame, 1)
+X = np.array(sequences)
+y = to_categorical(labels).astype(int)
 
-        # Make detections
-        image, results = mediapipeDetection(frame, holistic)
+X_train, X_test, y_train, y_test = test_train_split(X, y, test_size=0.05)
 
-        drawStyledLandmarks(image, results)
+log_dir = os.path.join('Logs')
+tb_callback = TensorBoard
+
+modle = Sequential()
+model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(30,1662)))
+model.add(LSTM(128, return_sequences=True, activation='relu'))
+model.add(LSTM(64, return_sequences=false, activation='relu'))
+model.add(Dense(64, activation='relu'))
+model.add(Dense(32, activation='relu'))
+model.add(Dense(actions.shape[0], activation='softmax'))
+
+actions[np.argmax(1, 2, 3)]
+
+# Loss function used because multi class classification model
+model.compile(optimizer="Adam", loss='categorical_crossentropy', metrics=['categorical_accuracy'])
+
+model.fit(X_train, y_train, epochs=2000, callbacks=[tb_callback])
+
+# cap = cv2.VideoCapture(0)
+
+# with mp_holistic.Holistic(min_detection_confidence = 0.8, min_tracking_confidence = 0.8) as holistic:
+#     while cap.isOpened():
+#         ret, frame = cap.read()
+#         frame = cv2.flip(frame, 1)
+
+#         # Make detections
+#         image, results = mediapipeDetection(frame, holistic)
+
+#         drawStyledLandmarks(image, results)
 
     # # Loop through actions
     # for action in actions:
@@ -124,9 +161,9 @@ with mp_holistic.Holistic(min_detection_confidence = 0.8, min_tracking_confidenc
                 # Shows to screen
                 # cv2.imshow('Feed', image)
         
-        cv2.imshow('Feed', image)
-        if cv2.waitKey(10) & 0xFF == ord('q'):
-            break
+#         cv2.imshow('Feed', image)
+#         if cv2.waitKey(10) & 0xFF == ord('q'):
+#             break
 
-cap.release()
-cv2.destroyAllWindows()
+# cap.release()
+# cv2.destroyAllWindows()
